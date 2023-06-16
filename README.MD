@@ -1,7 +1,7 @@
 # Bootstrap aggregation and confidence measures to improve time series causal discovery
 
 In this folder, you can find the official implementation of the paper: 
-> Debeire, K., Runge, J., Gerhardus, A., Eyring, V. (2023). Bootstrap aggregation and confidence measures to improve time series causal discovery (see [Preprint](url))
+> Debeire, K., Runge, J., Gerhardus, A., Eyring, V. (2023). Bootstrap aggregation and confidence measures to improve time series causal discovery (see [arXiv article](http://arxiv.org/abs/2306.08946))
 
 A method to perform bootstrap aggregation of time series causal graphs and measure a confidence for links of the aggregated graph. Here combined with the PCMCI+ algorithm from the [TIGRAMITE](https://github.com/jakobrunge/tigramite/) package. We provide here the code that can be used to recreate figures 3, 4, and 5 as presented in the paper.
 
