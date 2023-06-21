@@ -7,7 +7,7 @@ A method to perform bootstrap aggregation of time series causal graphs and measu
 
 Author: Kevin Debeire, [kevin.debeire@dlr.de](mailto:kevin.debeire@dlr.de)
 
-The current release on Zenodo can be found here: [![DOI](url)](url)
+The current release on Zenodo can be found here: [![DOI](https://zenodo.org/badge/656643051.svg)](https://zenodo.org/badge/latestdoi/656643051)
 ## Requirements
 
 First **setup a conda environment** (by default called bagged_pcmci) from the [environment.yml](./environment.yml) file:
