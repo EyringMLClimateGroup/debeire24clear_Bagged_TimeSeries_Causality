@@ -55,7 +55,7 @@ They specify where the numerical results are saved, and where the figures are sa
 
 For **figure 3 and figure 4**:
 - If you have access to an HPC system with slurm job scheduler:
-    - fill in [*sbatch_fig4and3.sh*](./sbatch_fig4and3.sh). Specifiy your account, partition, number of cores per CPU, etc...
+    - fill in [*sbatch_fig4and3.sh*](./sbatch_fig4and3.sh). Specify your account, partition, number of cores per CPU, etc...
     - check the model parameters in [*create_submission_fig4and3.py*](./create_submission_fig4and3.py)
     - run: 'python create_submission_fig4and3.py 1'. This will submit a job for each model configurations (here for each alpha_pc of PCMCI+) in which the Bagged-PCMCI+ and PCMCI+ are evaluated on the generated synthetic data 
     - Once all computations are done. Run 'python plot_fig4and3.py par_corr pc_alpha_highdegree'
@@ -69,7 +69,7 @@ For **figure 3 and figure 4**:
 For **figure 5A**:
 
 - If you have access to an HPC system with slurm job scheduler:
-    - fill in [*sbatch_fig5A.sh*](./sbatch_fig5A.sh). Specifiy your account, partition, number of cores per CPU, etc...
+    - fill in [*sbatch_fig5A.sh*](./sbatch_fig5A.sh). Specify your account, partition, number of cores per CPU, etc...
     - check the model parameters in [*compute_fig5A.py*](./compute_fig5A.py)
     - run: 'sbatch sbatch_fig5A.sh'. This will submit a job for the specified method and model settings. Bagged-PCMCI+ and PCMCI+ are evaluated on generated synthetic data
     - Once all computations are done, run 'python plot_fig5A.py' to reproduce the figure 5A.
@@ -82,7 +82,7 @@ For **figure 5A**:
 For **figure 5B**:
 
 - If you have access to an HPC system with slurm job scheduler:
-    - fill in [*sbatch_fig5B.sh*](./sbatch_fig5B.sh). Specifiy your account, partition, number of cores per CPU, etc...
+    - fill in [*sbatch_fig5B.sh*](./sbatch_fig5B.sh). Specify your account, partition, number of cores per CPU, etc...
     - check the model parameters in [*create_submission_fig5B.py*](./create_submission_fig5B.py)
     - run: 'python create_submission_fig5B.py 1'. This will submit a job for the specified method and model settings
     - run: 'python compute_metrics_fig5B.py'. This will calculate the mean absolute frequencies errors
