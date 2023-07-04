@@ -1,5 +1,6 @@
 #!/bin/bash
 #SBATCH --ntasks-per-node= XXX ###number of cores per CPU
+#SBATCH --contiguous       # Ensure that all of the cores are on the same Infiniband network, adjust if necessary
 #SBATCH --time=08:00:00
 #SBATCH --partition= XXXX ###partition name
 #SBATCH --account= XXXX ###your account name
