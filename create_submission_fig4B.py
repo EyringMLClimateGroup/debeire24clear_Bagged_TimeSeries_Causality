@@ -139,17 +139,17 @@ for config_chunk in split(configurations, chunk_length):
 
     print(max([len(chunk) for chunk in split(job_list, num_jobs)])) 
     
-    use_script = 'compute_fig5B.py'
+    use_script = 'compute_fig4B.py'
 
     if submit == False:
-        submit_string = ["python", "compute_fig5B.py", str(num_cpus), str(samples), str(verbosity)] + config_chunk 
+        submit_string = ["python", "compute_fig4B.py", str(num_cpus), str(samples), str(verbosity)] + config_chunk 
 
         if run_locally:
             print("Run locally")
             process = subprocess.Popen(submit_string)  #,
             output = process.communicate()
     if submit:
-        submit_string = ['sbatch', '--time', '%02.d:%02.d:00' % (run_time_hrs, run_time_min), 'sbatch_fig5B.sh', use_script + " %d %d %d %s" %(num_cpus, samples, verbosity, config_string)] 
+        submit_string = ['sbatch', '--time', '%02.d:%02.d:00' % (run_time_hrs, run_time_min), 'sbatch_fig4B.sh', use_script + " %d %d %d %s" %(num_cpus, samples, verbosity, config_string)] 
         print(submit_string[-1])
         process = subprocess.Popen(submit_string)  #, 
         output = process.communicate()

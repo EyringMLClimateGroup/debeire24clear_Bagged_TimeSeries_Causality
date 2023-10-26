@@ -37,17 +37,16 @@ fix_metrics = False
 overwrite = False
 
 
-for model in ['random_lineargaussian_highdegree']:
-#For fig 3 and 4 of the paper only pc_alpha varies, N,T, auto are fixed.
+for model in ['random_lineargaussian_highdegree']: # random_linearmixed_highdegree or also random_nonlineargaussian_highdegree
 #pc_alpha= [0.00001,0.00005,0.0001,0.0005,0.001,0.005,0.01,0.02,0.05,0.1,0.2,0.3, 0.4, 0.5,0.6, 0.8, 0.9, 0.95, 0.98, 0.99, 0.999]
 
-#For SM figures, we varied the parameters T,N and Tau_max
+#Indicative values for the parameters T,N and Tau_max for other figures
 #highdim = [2,3,5,10,20,30,40]; 
 #sample_size=[100,200,500,1000]
 #auto=[0., 0.2, 0.4, 0.5, 0.6, 0.8, 0.9, 0.95, 0.98, 0.99, 0.999]; 
 #tau_max=[5, 10, 15, 20, 25, 30, 35, 40]
 
-  for N in [10]: #[2,3,5,10,20,30,40] for SM experiments
+  for N in [10]: #[2,3,5,10,20,30,40]
     if N == 2:
         n_links = 1
     else:
@@ -60,18 +59,20 @@ for model in ['random_lineargaussian_highdegree']:
 
     for min_coeff in [0.1]:
      for coeff in [0.5]:
-      for auto in [0.95]: #[0., 0.2, 0.4, 0.5, 0.6, 0.8, 0.9, 0.95, 0.98, 0.99, 0.999] for SM experiments
+      for auto in [0.95]: #[0., 0.2, 0.4, 0.5, 0.6, 0.8, 0.9, 0.95, 0.98, 0.99, 0.999]
        for max_true_lag in [5]:
         for contemp_fraction in [0.3]:
-          for frac_unobserved in [0.]:
-            for T in [200]: #[100,200,500,1000] for SM experiments
+          for frac_unobserved in [0.]: #0.3 for LPCMCI experiments
+            for T in [200]: #[100,200,500,1000]
               for ci_test in ['par_corr']: 
 
                 method_list = [
                         'standard_pcmci+',
-                        'bootstrap_pcmci+'
-                        #'pcalg',
-                        #'bootstrap_pcalg'
+                        'bootstrap_pcmci+',
+                        #'pcalg', #for fig 14/15
+                        #'bootstrap_pcalg' #for fig 14/15
+                        #'lpcmci' #for fig16/17
+                        #'bootstrap_lpcmci' #for fig16/17
                         ]
                 for method in method_list:
                 # below pc_alpha values for Fig3., only [0.001,0.005,0.01,0.02,0.05] is needed for fig 4.
@@ -150,17 +151,17 @@ for config_chunk in split(configurations, chunk_length):
 
     print(max([len(chunk) for chunk in split(job_list, num_jobs)])) 
     
-    use_script = 'compute_fig4and3.py'
+    use_script = 'compute_fig2-3and5to17.py'
 
     if submit == False:
-        submit_string = ["python", "compute_fig4and3.py", str(num_cpus), str(samples), str(verbosity)] + config_chunk 
+        submit_string = ["python", "compute_fig2-3and5to17.py", str(num_cpus), str(samples), str(verbosity)] + config_chunk 
 
         if run_locally:
             print("Run locally")
             process = subprocess.Popen(submit_string)  #, 
             output = process.communicate()
     if submit:
-        submit_string = ['sbatch', '--ntasks', str(num_cpus), '--time', '%02.d:%02.d:00' % (run_time_hrs, run_time_min), 'sbatch_fig4and3.sh', use_script + " %d %d %d %s" %(num_cpus, samples, verbosity, config_string)]  # +  config_chunk
+        submit_string = ['sbatch', '--ntasks', str(num_cpus), '--time', '%02.d:%02.d:00' % (run_time_hrs, run_time_min), 'sbatch_fig2-3and5to17.sh', use_script + " %d %d %d %s" %(num_cpus, samples, verbosity, config_string)]  # +  config_chunk
         print(submit_string[-1])
         process = subprocess.Popen(submit_string)  #, 
         output = process.communicate()

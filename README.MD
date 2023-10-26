@@ -47,52 +47,46 @@ python setup.py install
 
 ## Generating numerical experiments data and plotting figures
 
-Find below the instructions to produce the **figure 3, 4, 5A and 5B** of the paper.
-**All default model and method parameters of the scripts are already set to reproduce the figures.**
+Find below the instructions to produce the **figures 2, 3, 4A, 4B** of the main text and **5 to 17** of the appendix.
+**All model and method parameters of the scripts may need to be adjusted to reproduce the figures.**
 
-Please **adjust the save paths** (by default *./* ) in the following scripts : [compute_fig4and3.py](./compute_fig4and3.py), [compute_fig5A.py](./compute_fig5A.py), [compute_fig5B.py](./compute_fig5B.py), [compute_metrics_fig5B.py](./compute_metrics_fig5B.py), [plotfig4and3.py](./plot_fig4and3.py), [plot_fig5A.py](./plot_fig5A.py), [plot_fig5B.py](./plot_fig5B.py).
+Please also **adjust the save paths** (by default *./* ) in the scripts.
 They specify where the numerical results are saved, and where the figures are saved.
 
-For **figure 3 and figure 4**:
-- If you have access to an HPC system with slurm job scheduler:
-    - fill in [*sbatch_fig4and3.sh*](./sbatch_fig4and3.sh). Specify your account, partition, number of cores per CPU, etc...
-    - check the model parameters in [*create_submission_fig4and3.py*](./create_submission_fig4and3.py)
-    - run: 'python create_submission_fig4and3.py 1'. This will submit a job for each model configurations (here for each alpha_pc of PCMCI+) in which the Bagged-PCMCI+ and PCMCI+ are evaluated on the generated synthetic data 
-    - Once all computations are done. Run 'python plot_fig4and3.py par_corr pc_alpha_highdegree'
-    - You can modify the values of pc_alpha in 'create_submission_fig4and3.py' and 'plot_fig4and3' to produce figure 4
-- Alternatively, it can be run locally, but this is not recommended as the computational cost to run the numerical experiments are high:
-    - set *run_locally=True* and *submit=False* in [*create_submission_fig4and3.py*](./create_submission_fig4and3.py)
-    - run: 'python create_submission_fig4and3.py 1'
-    - Once all computations are done, run 'python plot_fig4and3.py par_corr pc_alpha_highdegree'.
+### Generation of the synthetic data:
 
+If you have access to an HPC system with a slurm job scheduler:
+- fill in the *sbatch_XXX.sh* scripts. Specify your account, partition, number of cores per CPU, etc...
+- **adjust the model parameters and methods** in the *create_submission_figXXX.py* scripts to reproduce a given figure.
+- run: 'python create_submission_figXXX.py 1'. This will submit a job for each configuration (for example each alpha_pc of PCMCI+, number of variables, sample size, etc...) in which the Bagged-PCMCI+ and PCMCI+ (or PC/LPCMCI) are evaluated on the generated synthetic data.
 
-For **figure 5A**:
+Alternatively, it can be run locally, but this is not recommended as the computational cost to run the numerical experiments are high:
+- set *run_locally=True* and *submit=False* in *create_submission_figXXX.py*
+- **adjust the model parameters and methods** in the *create_submission_figXXX.py* scripts to reproduce a given figure.
+- run: 'python create_submission_figXXX.py 1'
 
-- If you have access to an HPC system with slurm job scheduler:
-    - fill in [*sbatch_fig5A.sh*](./sbatch_fig5A.sh). Specify your account, partition, number of cores per CPU, etc...
-    - check the model parameters in [*compute_fig5A.py*](./compute_fig5A.py)
-    - run: 'sbatch sbatch_fig5A.sh'. This will submit a job for the specified method and model settings. Bagged-PCMCI+ and PCMCI+ are evaluated on generated synthetic data
-    - Once all computations are done, run 'python plot_fig5A.py' to reproduce the figure 5A.
+**For fig4A**, check the model parameters in compute_fig4A.py and run: 'python compute_fig5A.py'.
+**For fig4B**, once all computations are done, run: 'python compute_metrics_fig5B.py'. This will calculate the mean absolute frequencies errors.
 
-- Alternatively, it can be run locally, but this is not recommended as the computational cost to run the numerical experiments are high:
-    - check the model parameters in [*compute_fig5A.py*](./compute_fig5A.py)
-    - run: 'python compute_fig5A.py' to generate the synthetic data and run Bagged-PCMCI+ and PCMCI+
-    - Once all computations are done, run 'python plot_fig5A.py' to reproduce the figure 5A.
+### Plotting:
+Once the data has been generated, you can plot the figures:
+- Use the plotting script matching the figure you want to reproduce.
+- You may need to adjust the **values of the model parameters** and **methods** in the plotting scripts.
+- For figure 4A, simply run 'python plot_fig4A.py' to reproduce the figure 4A.
+- For the other figures, the script expects arguments which describes the type of experiments. For example, run 'python plot_figXXX.py par_corr pc_alpha_highdegree'. The first argument indicates the Conditional Independence test: par_corr (all linear experiments) or gp_dc (nonlinear experiment). The second arguments includes the name of the varying parameters (pc_alpha,sample_size,highdim,tau_max,autocorr) and additional arguments like the degree of cross-links ("highdegree"), the noise distribution ("mixed"), nonlinearity ("nonlinear"), or "boot_rea" for figure 4B. We give a list of the arguments for each figure below.
 
-For **figure 5B**:
-
-- If you have access to an HPC system with slurm job scheduler:
-    - fill in [*sbatch_fig5B.sh*](./sbatch_fig5B.sh). Specify your account, partition, number of cores per CPU, etc...
-    - check the model parameters in [*create_submission_fig5B.py*](./create_submission_fig5B.py)
-    - run: 'python create_submission_fig5B.py 1'. This will submit a job for the specified method and model settings
-    - run: 'python compute_metrics_fig5B.py'. This will calculate the mean absolute frequencies errors
-    - Run 'python plot_fig5B.py' to reproduce the figure 5A.
-
-- Alternatively, it can be run locally, but this is not recommended as the computational cost to run the numerical experiments are high:
-    - set *run_locally=True* and *submit=False* in [*create_submission_fig5B.py*](./create_submission_fig5B.py)
-    - run: 'python create_submission_fig5B.py 1'
-    - Once all computations are done, run: 'python compute_metrics_fig5B.py'. This will calculate the mean absolute frequencies errors
-    - Run 'python plot_fig5B.py par_corr boot_rea_highdegree' to reproduce the figure 5B.
+List of command to run to plot a figure:
+- fig2/5 (like fig6/7 and 8/9 and 10/11): 'python plot_fig2and5to17.py par_corr pc_alpha_highdegree' (only the values of the model parameters change)
+- fig3a: 'python plot_fig3.py par_corr highdim_highdegree'
+- fig3b: 'python plot_fig3.py par_corr sample_size_highdegree'
+- fig3c: 'python plot_fig3.py par_corr autocorr_highdegree'
+- fig3d: 'python plot_fig3.py par_corr tau_max_highdegree'
+- fig4a: 'python plot_fig4A.py'
+- fig4b: 'python plot_fig4B.py par_corr boot_rea_highdegree'
+- fig12a: 'python plot_fig2and5to17.py par_corr pc_alpha_highdegree_mixed'
+- fig12b: 'python plot_fig2and5to17.py par_corr pc_alpha_highdegree_nonlinear'
+- fig14/15: 'python plot_fig2and5to17.py par_corr pc_alpha_highdegree' (make sure to change the methods)
+- fig16/17: 'python plot_fig2and5to17.py par_corr pc_alpha_highdegree' (make sure to change the methods)
 
 ## License
 GNU General Public License v3.0

@@ -7,14 +7,16 @@ import tigramite
 import tigramite.data_processing as pp
 
 from tigramite.pcmci import PCMCI
+from tigramite.lpcmci import LPCMCI
 from tigramite.independence_tests.parcorr import ParCorr
+from tigramite.independence_tests.gpdc import GPDC
 import generate_data_mod as mod
 import statsmodels
 import statsmodels.tsa.api as tsa
 import metrics_mod
 import scipy.stats
 import mpi
-import pickle 
+import pickle
 from copy import deepcopy
 from matplotlib import pyplot
 
@@ -407,6 +409,38 @@ def calculate(para_setup):
         graph_bool = pcmcires['summary_results']['most_frequent_links']
         graph= graph_bool
         val_min = np.abs(pcmcires['summary_results']['val_matrix_mean'])
+        max_cardinality = np.ones(graph_bool.shape, dtype='int')
+
+    elif method == 'lpcmci':
+        lpcmci = LPCMCI(
+            dataframe=dataframe, 
+            cond_ind_test=cond_ind_test)        
+        lpcmcires = lpcmci.run_lpcmci( 
+                    tau_max = tau_max, 
+                    pc_alpha = pc_alpha,
+                    max_p_non_ancestral = 3,
+                    n_preliminary_iterations = 0,
+                    prelim_only = False,
+                    )
+        graph = lpcmci.graph
+        val_min = lpcmci.val_min_matrix
+        max_cardinality = lpcmci.cardinality_matrix
+
+    elif method == 'bootstrap_lpcmci':
+        lpcmci = LPCMCI(
+            dataframe=dataframe, 
+            cond_ind_test=cond_ind_test)
+        lpcmci_arg = {
+            "tau_max": tau_max,
+            "pc_alpha": pc_alpha,
+            "max_p_non_ancestral": 3,
+            "n_preliminary_iterations": 0,
+            "prelim_only": False,
+            }
+        boot_lpcmci_res = lpcmci.run_bootstrap_of('run_lpcmci',lpcmci_arg,boot_samples =n_bs, boot_blocklength=1, )
+        graph_bool = boot_lpcmci_res['summary_results']['most_frequent_links']
+        graph= graph_bool
+        val_min = np.abs(boot_lpcmci_res['summary_results']['val_matrix_mean'])
         max_cardinality = np.ones(graph_bool.shape, dtype='int')
 
     else:

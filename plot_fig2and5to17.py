@@ -48,7 +48,6 @@ def AU_ROC(data1, data2):
 
 params = { 'figure.figsize': (8, 10),
            'legend.fontsize': 8,
-           # 'title.fontsize': 8,
            'lines.color':'black',
            'lines.linewidth':1,
             'xtick.labelsize':4,
@@ -60,8 +59,6 @@ params = { 'figure.figsize': (8, 10),
             'axes.labelsize':8,
             'font.size':8,
             'axes.labelpad':2,
-            # 'text.usetex' : True,
-            # 'legend.labelsep': 0.0005 
             'pdf.fonttype' : 42,
             'figure.dpi': 600,
             }
@@ -69,25 +66,24 @@ params = { 'figure.figsize': (8, 10),
 save_type = 'pdf'
 folder_name = './' #FOLDER WHERE NUMERICAL EXPERIMENTS ARE SAVED
 save_folder = './' #FOLDER WHERE FIGURES ARE SAVED
-test = False
 
 try:
     arg = sys.argv
-    ci_test = str(arg[1])  
-    variant = str(arg[2])
+    ci_test = str(arg[1])  #par_corr or gp_dc
+    variant = str(arg[2])  #sample_size/tau_max/highdim/autocorr/pc_alpha + highdegree/"" + mixed/nonlinear/""
 except:
     arg = ''
     ci_test = 'par_corr'
-    variant = 'autocorr'  
+    variant = 'autocorr_highdegree'
 print(variant)
-name = {'par_corr':r'ParCorr', 'gp_dc':r'GPDC', 'cmi_knn':r'CMIknn'}
+name = {'par_corr':r'ParCorr', 'gp_dc':r'GPDC'}
 
 def f1score(precision_,recall_):
     return 2 * (precision_ * recall_) / (precision_ + recall_)
 
 def get_metrics_from_file(para_setup):
 
-    name_string = '%s-'*len(para_setup)  # % para_setup
+    name_string = '%s-'*len(para_setup)
     name_string = name_string[:-1]
 
     try:
@@ -125,22 +121,19 @@ def print_time_std(time, precision=1):
             return r"%.0f$\pm$%.0fh" % (mean/3600., std/3600.)
         elif mean > 60.:
             return r"%.0f$\pm$%.0fmin" % (mean/60., std/60.)
-            # return "%.0fmin" % (mean/60.)
         else:
             return r"%.0f$\pm$%.0fs" % (mean, std)
-            # return "%.0fs" % (mean)
     else:
         if mean > 60*60.:
             return r"%.1f$\pm$%.1fh" % (mean/3600., std/3600.)
         elif mean > 60.:
             return r"%.1f$\pm$%.1fmin" % (mean/60., std/60.)
-            # return "%.0fmin" % (mean/60.)
         else:
             return r"%.1f$\pm$%.1fs" % (mean, std)
 
 def draw_it(paras, which):
 
-    figsize = (4, 3)  #(4, 2.5)
+    figsize = (4, 3)
     capsize = .5
     marker1 = 'o'
     marker2 = 's'
@@ -150,11 +143,9 @@ def draw_it(paras, which):
     params = { 
            'legend.fontsize': 5,
            'legend.handletextpad': .05,
-           # 'title.fontsize': 8,
            'lines.color':'black',
            'lines.linewidth':.5,
            'lines.markersize':2,
-           # 'lines.capsize':4,
             'xtick.labelsize':5,
             'xtick.major.pad'  : 1, 
             'xtick.major.size' : 2,
@@ -164,7 +155,6 @@ def draw_it(paras, which):
             'axes.labelsize':8,
             'font.size':8,
             'axes.labelpad':2,
-            # 'axes.grid': True,
             'axes.spines.right' : False,
             'axes.spines.top' : False,
             }
@@ -189,7 +179,6 @@ def draw_it(paras, which):
         axroc_anylink = figroc.add_subplot(121)
         axroc_contemp = figroc.add_subplot(122)
         figalpha = plt.figure(figsize=(2,2),dpi=600)
-        #axalpha = figalpha.add_subplot(111)
     if fpr_precision == 'fpr':
         if which == 'pc_alpha':
             print(paras)
@@ -197,7 +186,6 @@ def draw_it(paras, which):
         else:    
             ax1b.axhline(pc_alpha, color='grey', linewidth=2.)
     if which == 'pc_alpha':
-        #print(paras)
         axfig2.plot([paras.index(para) for para in paras], paras, color='grey', linewidth=2.)
     else:
         axfig2.axhline(pc_alpha, color='grey', linewidth=2.)
@@ -363,26 +351,22 @@ def draw_it(paras, which):
                 axroc_contemp.plot(contemp_recall_list_method,contemp_precision_list_method,color=color_picker(method,idx),marker=marker1, markersize=1,
                             alpha=alpha_marker, linewidth = 0.5, linestyle="solid")
                 auc_dict[method+str(n_bs_here)+'_contemp'] = np.trapz(contemp_precision_list_method,contemp_recall_list_method)
-                            #alpha=alpha_marker,color=color_picker(method,idx), marker=marker1, markersize=1)
+
     if run_anova:
 
         anova_results = {}
         for method in methods:
             anova_results[method] = {}
             for metric in anova[method].keys():
-
-                # if metric == 'computation_time':
                 anova_results[method][metric] = {}
                 aslist = []
                 for para, data in anova[method][metric]:
                     mean, std = data
                     val = mean
-                    # for val in scipy.stats.norm.rvs(loc=mean, scale=std, size=200):
                     aslist.append((val, para))
                 try:
                     df = pd.DataFrame.from_records(aslist, columns = [metric, 'para'])
                     results = ols('%s ~  C(para)' % metric, data=df).fit()       
-                    # print (results.summary())
                     coeffs = np.array(results.params)
                     pvals = np.array(results.pvalues)
                     ref_coeff = coeffs[0]
@@ -391,7 +375,6 @@ def draw_it(paras, which):
                     anova_results[method][metric]['ref_coeff'] = ref_coeff
                     anova_results[method][metric]['normalized_coeffs_mean'] = normalized_coeffs.mean()
                     anova_results[method][metric]['any_sig'] = len(np.where(pvals[1:] <= 0.01)[0])
-                    # print(ref_coeff, normalized_coeffs.mean(), len(np.where(pvals[1:] <= 0.01)[0]))
                 except Exception as e:
                     print("Something went wrong in ANOVA")
                     print(e)
@@ -433,9 +416,6 @@ def draw_it(paras, which):
                         weight='bold',
                         bbox=dict(boxstyle='square,pad=0', facecolor='white', linewidth=0., alpha=0.5),
                         transform=ax.transAxes)
-
-
-    # print(axes)
     if which =="pc_alpha":
         axroc_anylink.set_xlim(min(recall_list_method)-0.01,1.+0.01)
         axroc_anylink.set_ylim(0,1.)
@@ -460,8 +440,6 @@ def draw_it(paras, which):
         ax = axes[axname]
 
         if which == 'N':
-            # print(ax)
-            # print(axes)
             ax.set_xlim(-0.5, len(paras))
             if ci_test == 'par_corr':
                 ax.xaxis.set_ticks([paras.index(p) for p in paras] )
@@ -617,29 +595,28 @@ def draw_it(paras, which):
                 color_ = color_picker(method,idx) 
                 
                 axlegend.errorbar([], [], linestyle='',
-                capsize=capsize, label=method_label, #method_label(method)
+                capsize=capsize, label=method_label,
                 color= color_, marker='s')
         else:
             method_label ="PC"
             color_= color_picker(method) 
             axlegend.errorbar([], [], linestyle='',
-            capsize=capsize, label=method_label, #method_label(method)
+            capsize=capsize, label=method_label,
             color=color_, marker='s')
     
     if not 'paper' in variant:
         ncol = 4
         fontsize = 6
     else:
-        ncol = 4 #len(methods)
+        ncol = 4
         fontsize = 6
     axlegend.legend(ncol=ncol,
-            # bbox_to_anchor=(0., 1.0, 1., .03),
              loc='lower left',
             markerscale=3,
             columnspacing=.75,
             labelspacing=.01,
             fontsize=fontsize, framealpha=.5
-            ) #.draw_frame(False)
+            )
 
     axlegend2 = fig2.add_axes([0.05, .85, 1., .05])
     axlegend2.axis('off')
@@ -650,13 +627,13 @@ def draw_it(paras, which):
                 color_ = color_picker(method,idx) 
                 
                 axlegend2.errorbar([], [], linestyle='',
-                capsize=capsize, label=method_label, #method_label(method)
+                capsize=capsize, label=method_label,
                 color= color_, marker='s')
         else: 
             method_label ="PC"
             color_= color_picker(method) 
             axlegend2.errorbar([], [], linestyle='',
-            capsize=capsize, label=method_label, #method_label(method)
+            capsize=capsize, label=method_label,
             color=color_, marker='s')
 
     if which == "pc_alpha":
@@ -670,7 +647,7 @@ def draw_it(paras, which):
                     method_label ="Bagged("+str(n_bs_here)+")-PC"
                     color_ = color_picker(method,idx) 
                     axlegend_roc.errorbar([], [], linestyle='',
-                    capsize=capsize, label=method_label, #method_label(method)
+                    capsize=capsize, label=method_label,
                     color= color_, marker='s')
             else: 
                 auc = auc_dict[method+"0"+"_anylink"]
@@ -678,7 +655,7 @@ def draw_it(paras, which):
                 method_label ="PC"
                 color_= color_picker(method) 
                 axlegend_roc.errorbar([], [], linestyle='',
-                capsize=capsize, label=method_label, #method_label(method)
+                capsize=capsize, label=method_label,
                 color=color_, marker='s')
         axlegend_roc.errorbar([],[],linestyle='dashed',color="blue",linewidth=0.5,label="No skill", marker="")
         
@@ -692,7 +669,7 @@ def draw_it(paras, which):
                     method_label ="Bagged("+str(n_bs_here)+")-PC"
                     color_ = color_picker(method,idx) 
                     axlegend_roc2.errorbar([], [], linestyle='',
-                    capsize=capsize, label=method_label, #method_label(method)
+                    capsize=capsize, label=method_label,
                     color= color_, marker='s')
             else: 
                 auc = auc_dict[method+"0"+"_contemp"]
@@ -700,7 +677,7 @@ def draw_it(paras, which):
                 method_label ="PC"
                 color_= color_picker(method) 
                 axlegend_roc2.errorbar([], [], linestyle='',
-                capsize=capsize, label=method_label, #method_label(method)
+                capsize=capsize, label=method_label,
                 color=color_, marker='s')
 
     if not 'paper' in variant:
@@ -716,44 +693,36 @@ def draw_it(paras, which):
 
 
     axlegend2.legend(ncol=ncol2,
-            # bbox_to_anchor=(0., 1.0, 1., .03),
              loc='lower left',
-            # borderaxespad=0, mode="expand", 
             markerscale=1.5,
             columnspacing=.15,
             labelspacing=.45,
             fontsize=3, framealpha=.5
-            ) #.draw_frame(False)
+            )
 
     axlegend.legend(ncol=ncol,
-            # bbox_to_anchor=(0., 1.0, 1., .03),
              loc='lower left',
-            # borderaxespad=0, mode="expand", 
             markerscale=3,
             columnspacing=.75,
             labelspacing=.01,
             fontsize=fontsize, framealpha=.5
-            ) #.draw_frame(False)
+            )
 
     if which == "pc_alpha":
         axlegend_roc.legend(ncol=ncolroc,
-                # bbox_to_anchor=(0., 1.0, 1., .03),
                 loc='lower left',
-                # borderaxespad=0, mode="expand", 
                 markerscale=1.5,
                 columnspacing=.15,
                 labelspacing=.45,
                 fontsize=4, framealpha=.5
-                ) #.draw_frame(False)
+                )
         axlegend_roc2.legend(ncol=ncolroc,
-                # bbox_to_anchor=(0., 1.0, 1., .03),
                 loc='lower left',
-                # borderaxespad=0, mode="expand", 
                 markerscale=1.5,
                 columnspacing=.15,
                 labelspacing=.45,
                 fontsize=4, framealpha=.5
-                ) #.draw_frame(False)
+                )
 
     if 'paper' in variant and SM is False:
         if 'autocorr' in variant:  # and ci_test == 'par_corr':
@@ -836,8 +805,6 @@ def draw_it(paras, which):
          fontsize=6, ha='right', va='top')
         fig2.text(0.5, 0., r"Frac. unobserved", fontsize=5,
             horizontalalignment='center', va='bottom')
-        # plt.figtext(1., 1., r"$N=%d, a=%s, T=%d, \alpha=%s$" %(N, auto, T, pc_alpha),)
-         # fontsize=6, ha='right', va='top')
         fig2.text(1., 1., r"%s: $N=%d, T=%d, a=%s, \tau_{\max}=%d$" %(model_name, N, T, auto) 
                             +"\n" + r"%s, $\alpha=%s, \tau_{\max}=%d$" %(name[ci_test], pc_alpha, tau_max),
          fontsize=4, ha='right', va='top')
@@ -890,137 +857,6 @@ def draw_it(paras, which):
     plot_files.append(save_folder + '%s.%s' %(save_suffix, save_type))
     plot_files_fpr.append(save_folder + '%s_fpr.%s' %(save_suffix, save_type))
 
-
-def draw_tsg(para_setup):
-
-
-    para_setup = (model, N, n_links, min_coeff, coeff, auto, contemp_fraction, frac_unobserved,
-            max_true_lag, T, ci_test, method, pc_alpha, tau_max)
-
-    res = metrics_mod.get_results(para_setup)
-
-    true_graph = res['true_graphs'][0]
-    _, _, tau_maxplusone = true_graph.shape
-
-    graph_rates = res['graphs']
-    val_min_rates = res['val_min']
-    print(val_min_rates.mean(axis=0)[:,:,1])
-
-    n_realizations = graph_rates.shape[0]
-    print(graph_rates.shape, true_graph.shape)
-
-    val_matrix = val_min_rates.mean(axis=0)
-
-    link_attribute = np.ones(val_matrix.shape, dtype = 'object')
-    # link_attribute[:] = 'spurious'
-   
-    link_matrix = np.ones(true_graph.shape, dtype='<U3')
-    link_width = np.ones(true_graph.shape) 
-
-    link_thres = 0.
-
-    for (i, j, abstau) in [(i, j, abstau) for i in range(N) 
-                                          for j in range(N) 
-                                          for abstau in range(tau_maxplusone)]:
-        if true_graph[i,j,abstau] == "":
-            tmp = np.array([link for link in graph_rates[:, i,j,abstau] if link != ""])
-            if len(tmp) > 0:
-                most_frequent_links, counts = scipy.stats.mode(tmp)
-                link_matrix[i,j,abstau] = most_frequent_links[0]
-            else:
-                link_matrix[i,j,abstau] = ""
-
-            link_attribute[i,j,abstau] = 'spurious'
-
-            tmp = (graph_rates[:, i,j,abstau] != "").mean()
-            if tmp > link_thres:
-                link_width[i,j,abstau] = tmp
-            else:
-                link_width[i,j,abstau] = 0.
-
-            # val_matrix is grey anyways
-        else:
-            tmp = np.array([link for link in graph_rates[:, i,j,abstau] if link != ""])
-            if len(tmp) > 0:
-                most_frequent_links, counts = scipy.stats.mode(tmp)
-                link_matrix[i,j,abstau] = most_frequent_links[0]
-            else:
-                link_matrix[i,j,abstau] = ""
-
-            if link_matrix[i,j,abstau] == true_graph[i,j,abstau]:
-                link_attribute[i,j,abstau] = ''
-            else:
-                link_attribute[i,j,abstau] = 'spurious'
-
-            tmp = (graph_rates[:, i,j,abstau] != "").mean()
-            if tmp > link_thres:
-                link_width[i,j,abstau] = tmp
-            else:
-                link_width[i,j,abstau] = 0.
-            # link_width[i,j,abstau] = (graph_rates[:, i,j,abstau] == true_graph[i,j,abstau]).mean()
-            
-            val_matrix[i,j,abstau] = val_min_rates[:, i,j,abstau].mean()
-   
-        if abstau == 0: 
-            argmin = np.argmin(np.abs(np.array([val_matrix[i,j,abstau], val_matrix[j,i,abstau]])))
-            if argmin == 0:
-                val_matrix[j,i,abstau] = val_matrix[i,j,abstau]
-            else:
-                val_matrix[i,j,abstau] = val_matrix[j,i,abstau]
-
-    for lag in range(tau_maxplusone):
-        print(lag)
-        print(link_matrix[:,:,lag])
-        print(link_width[:,:,lag])
-
-    edge_max = .7
-
-    var_names= [r'$X$', r'$Y$', r'$Z$'] + [r"$X^{%d}$" %(i) for i in range(3, N)]
-
-    fig, axes = plt.subplots(nrows=1, ncols=1, 
-        figsize=(7./3, 1.7), squeeze=True)
-    
-    if not 'paper' in variant:
-        plt.figtext(1., 1., r"%s $a=%s, T=%d, \alpha=%s$" %(method_label(method), auto, T, pc_alpha),
-         fontsize=3, ha='right', va='top')
-    else:
-        plt.figtext(0.5, 1., r"%s" % method_label(method), fontsize=8,
-            horizontalalignment='center', va='top')
-
-    tplot.plot_time_series_graph(
-        fig_ax = (fig, axes),
-        # figsize=(5./3, 2.5),
-        val_matrix=val_matrix,
-        sig_thres=None,
-        arrow_linewidth=4.,
-        node_size=5,
-        arrowhead_size=20,
-        curved_radius=.2,
-        label_fontsize=8,
-        alpha=1.,
-        node_label_size=10,
-        label_space_left=0.05,
-        label_space_top=0.06,
-        network_lower_bound=0.2,
-        link_colorbar_label='ParCorr',
-        
-        vmin_edges=0.,
-        vmax_edges=edge_max,
-        edge_ticks=.2,
-        cmap_edges = 'OrRd',
-
-        link_matrix=link_matrix,
-        link_width=link_width,
-        link_attribute=link_attribute,
-        var_names=var_names,
-        # undirected_style='dashed',
-        save_name=save_folder + '%s.%s' %(save_suffix, save_type),
-    )
-
-
-
-    plot_files.append(save_folder + '%s.%s' %(save_suffix, save_type))
-
 def adjust_lightness(color, amount=0.5):
     #Function to create a color shading
     # amount <1 darkens the color, amount >1 lightens the color
@@ -1034,11 +870,18 @@ def adjust_lightness(color, amount=0.5):
     return colorsys.hls_to_rgb(c[0], max(0, min(1, amount * c[1])), c[2])
 
 def color_picker(method,idx=0):
-    if "bootstrap" in method:
-        color_scaling = [adjust_lightness('green', amount=i) for i in [3.4,2.4,1,0]]
-        return color_scaling[idx]
-    else: return 'orange'
+    if "pcmci+" in method:
 
+        if "bootstrap" in method:
+            color_scaling = [adjust_lightness('green', amount=i) for i in [3.4,2.4,1,0]]
+            return color_scaling[2]
+        else: return 'orange'
+    if "lpcmci" in method:
+        if "bootstrap" in method:
+            color_scaling = [adjust_lightness('green', amount=i) for i in [3.4,2.4,1,0]]
+            return color_scaling[-2]
+        else: return 'magenta'
+        
 def method_label(method):
     # return method
     if not 'paper' in variant:
@@ -1059,14 +902,13 @@ def method_label(method):
     elif 'lingam' in method:
          return r"LiNGAM" 
     elif 'pcalg' in method:
-         return r"PC" 
+         return r"PC"
+    elif 'lpcmci' in method:
+        return r"LPCMCI"
     else:
         return method
 
 def links_from_N(num_nodes):
-
-    # if 'highdim' in variant and :
-    #     return num_nodes
     if num_nodes == 2:
         return 1
 
@@ -1091,23 +933,16 @@ if __name__ == '__main__':
 
     fpr_precision = 'precision'
 
-    if 'versions' in variant:
-        methods = [
-            'standard_pcmci+', 
-            'bootstrap_pcmci+',
-            #'pcalg',
-            #'bootstrap_pcalg',
-            ]
-    else:
-        methods = []
+    methods = []
 
-        methods += [
-            #'pcalg',
-            #'bootstrap_pcalg',
-            'standard_pcmci+',
-            'bootstrap_pcmci+',
-            ]
-
+    methods += [
+        'standard_pcmci+',
+        'bootstrap_pcmci+',
+        #'pcalg', #for fig 14/15
+        #'bootstrap_pcalg' #for fig 14/15
+        #'lpcmci' #for fig16/17
+        #'bootstrap_lpcmci' #for fig16/17
+        ]
 
     if ci_test == 'par_corr':
         if 'mixed' in variant:
@@ -1126,21 +961,12 @@ if __name__ == '__main__':
         model += '_highdegree'
 
     if  'autocorr' in variant:
-
-        if ci_test == 'par_corr':
-            T_here = [500]
-            N_here = [5]
-            num_rows = 4
-        else:
-            T_here = [500]
-            N_here = [5]
-            num_rows = 4
-
+        T_here = [500]
+        N_here = [5]
+        num_rows = 4
         tau_max = 5
         vary_auto = [0., 0.2, 0.4, 0.5, 0.6, 0.8, 0.9, 0.95, 0.98, 0.99, 0.999]
-
         pc_alpha_here = [0.01]
-        
         min_coeff = 0.1
         coeff = 0.5       
         frac_unobserved = 0.
@@ -1165,17 +991,10 @@ if __name__ == '__main__':
                 sys.exit(0)
 
     elif 'highdim' in variant:
-        if ci_test == 'par_corr':
-            T_here = [500]
-            vary_N =   [2,3,5,10,20,30,40]
-            auto_here = [0.95] 
-            num_rows = 4
-        else:
-            T_here = [500]
-            vary_N =  [2,3,5,10,20,30,40]
-            auto_here = [0.95] 
-            num_rows = 4
-
+        T_here = [500]
+        vary_N =   [2,3,5,10,20,30,40]
+        auto_here = [0.95] 
+        num_rows = 4
         contemp_fraction = 0.3
         frac_unobserved = 0.
         max_true_lag = 5
@@ -1199,18 +1018,10 @@ if __name__ == '__main__':
                         sys.exit(0)
 
     elif  'sample_size' in variant:
-
-        if ci_test == 'par_corr':
-            vary_T = [100,200,500,1000]
-            N_here = [5]
-            auto_here = [0.95]
-            num_rows = 4
-        else:
-            vary_T = [100,200,500,1000]
-            N_here = [5]
-            auto_here = [0.95]  
-            num_rows = 4
-
+        vary_T = [100,200,500,1000]
+        N_here = [5]
+        auto_here = [0.95]
+        num_rows = 4
         min_coeff = 0.1
         coeff = 0.5        
         pc_alpha_here = [0.01]
@@ -1235,17 +1046,13 @@ if __name__ == '__main__':
                         sys.exit(0)
 
     if 'tau_max' in variant:
-
-        if ci_test == 'par_corr':
-            T_here = [500]
-            N_here = [5]
-            auto_here = [0.95] 
-            num_rows = 4
-            vary_tau_max = [5, 10, 15, 20, 25, 30, 35, 40]
-
+        T_here = [500]
+        N_here = [5]
+        auto_here = [0.95] 
+        num_rows = 4
+        vary_tau_max = [5, 10, 15, 20, 25, 30, 35, 40]
         min_coeff = 0.1
         coeff = 0.5
-       
         pc_alpha_here = [0.01]
         contemp_fraction = 0.3
         frac_unobserved = 0.
@@ -1270,21 +1077,23 @@ if __name__ == '__main__':
 
     if 'pc_alpha' in variant:
 
-        if ci_test == 'par_corr':
-            T_here = [200]
-            N_here = [10]
-            auto_here = [0.95] 
-            num_rows = 4
-            tau_max = 5
-            # Here set for fig3, change to: vary_pc_alpha = [0.001,0.005,0.01,0.02,0.05] for fig 4
-            vary_pc_alpha = [0.00001,0.00005,0.0001,0.0005,0.001,0.005,0.01,0.02,0.05,0.1,0.2,0.3,
-                            0.4, 0.5, 0.6, 0.8, 0.9, 0.95, 0.98, 0.99, 0.999]
+
+        T_here = [200]
+        N_here = [10]
+        auto_here = [0.95] 
+        num_rows = 4
+        tau_max = 5
+        # Here set for fig3, change to: vary_pc_alpha = [0.001,0.005,0.01,0.02,0.05] for fig 4
+        vary_pc_alpha = [0.00001,0.00005,0.0001,0.0005,0.001,0.005,0.01,0.02,0.05,0.1,0.2,0.3,
+                        0.4, 0.5, 0.6, 0.8, 0.9, 0.95, 0.98, 0.99, 0.999]
         min_coeff = 0.1
         coeff = 0.5
         contemp_fraction = 0.3
-        frac_unobserved = 0.
+        if "lpcmci" in variant: frac_unobserved= 0.3
+        else: frac_unobserved = 0.
         max_true_lag = 5
         n_bs = [25,50,100,200]
+        if "nonlinear" in variant: n_bs=[400]
 
         for T in T_here:
          for N in N_here:
