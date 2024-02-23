@@ -1,12 +1,9 @@
-import os, time, sys
+import sys
 from os import listdir
 from os.path import isfile, join
 import subprocess
 import numpy as np
 from random import shuffle
-import pickle
-
-import socket
 
 try:
     arg = sys.argv
@@ -22,7 +19,7 @@ run_locally = False
 
 mypath = './' #PATH OF SAVED RESULTS (to check if results already exist)
 
-num_jobs = 100 #max number of jobs on HPC system
+num_jobs = 500 #max number of jobs on HPC system
 run_time_hrs = 8 #hours of HPC jobs
 run_time_min = 0  #min of HPC jobs
 num_cpus = 128  #Number of cpu per cores, default 128
@@ -35,10 +32,10 @@ anyconfigurations = []
 
 fix_metrics = False
 overwrite = False
-
+aggregation='majority' #'alternative'
 
 for model in ['random_lineargaussian_highdegree']: # random_linearmixed_highdegree or also random_nonlineargaussian_highdegree
-#pc_alpha= [0.00001,0.00005,0.0001,0.0005,0.001,0.005,0.01,0.02,0.05,0.1,0.2,0.3, 0.4, 0.5,0.6, 0.8, 0.9, 0.95, 0.98, 0.99, 0.999]
+#pc_alpha= [0.00001,0.00005,0.0001,0.0005,0.001,0.005,0.01,0.02,0.05,0.1,0.2,0.3, 0.4, 0.5,0.6, 0.8, 0.9, 0.95, 0.98, 0.99]
 
 #Indicative values for the parameters T,N and Tau_max for other figures
 #highdim = [2,3,5,10,20,30,40]; 
@@ -46,7 +43,7 @@ for model in ['random_lineargaussian_highdegree']: # random_linearmixed_highdegr
 #auto=[0., 0.2, 0.4, 0.5, 0.6, 0.8, 0.9, 0.95, 0.98, 0.99, 0.999]; 
 #tau_max=[5, 10, 15, 20, 25, 30, 35, 40]
 
-  for N in [10]: #[2,3,5,10,20,30,40]
+  for N in [5]: #[2,3,5,10,20,30,40]
     if N == 2:
         n_links = 1
     else:
@@ -69,27 +66,31 @@ for model in ['random_lineargaussian_highdegree']: # random_linearmixed_highdegr
                 method_list = [
                         'standard_pcmci+',
                         'bootstrap_pcmci+',
-                        #'pcalg', #for fig 14/15
-                        #'bootstrap_pcalg' #for fig 14/15
-                        #'lpcmci' #for fig16/17
-                        #'bootstrap_lpcmci' #for fig16/17
+                        #'pcalg', #for fig 15/16
+                        #'bootstrap_pcalg' #for fig 15/16
+                        #'lpcmci' #for fig17/18
+                        #'bootstrap_lpcmci' #for fig17/18
                         ]
                 for method in method_list:
                 # below pc_alpha values for Fig3., only [0.001,0.005,0.01,0.02,0.05] is needed for fig 4.
                   for pc_alpha in [0.00001,0.00005,0.0001,0.0005,0.001,0.005,0.01,0.02,0.05,0.1,0.2,0.3, 0.4, 0.5, 0.6, 0.8, 0.9, 0.95, 0.98, 0.99, 0.999]:
                    for tau_max in [5]: # [5, 10, 15, 20, 25, 30, 35, 40] for SM experiments
                         if "bootstrap_" not in method:
-                            pc_alpha = np.format_float_positional(np.float(pc_alpha),trim='-')
+                            pc_alpha = np.format_float_positional(float(pc_alpha),trim='-')
                             para_setup = (model, N, n_links, min_coeff, coeff, auto, contemp_fraction, frac_unobserved, max_true_lag, T, ci_test, method, pc_alpha, tau_max,
                                      0)
                             name = '%s-'*len(para_setup) % para_setup
                             name = name[:-1]
                             anyconfigurations += [name]
                         else:
-                            for n_bs in [25,50,100,200]: #number of bootstrap realizations
-                                pc_alpha = np.format_float_positional(np.float(pc_alpha),trim='-')
-                                para_setup = (model, N, n_links, min_coeff, coeff, auto, contemp_fraction, frac_unobserved, max_true_lag, T, ci_test, method, pc_alpha, tau_max,
-                                                        n_bs)
+                            for n_bs in [25,50,100,200]: #number of bootstrap realizations [25,50,100,200]
+                                pc_alpha = np.format_float_positional(float(pc_alpha),trim='-')
+                                if aggregation!="alternative":
+                                    para_setup = (model, N, n_links, min_coeff, coeff, auto, contemp_fraction, frac_unobserved, max_true_lag, T, ci_test, method, pc_alpha, tau_max,
+                                                            n_bs)
+                                else:
+                                    para_setup = (model, N, n_links, min_coeff, coeff, auto, contemp_fraction, frac_unobserved, max_true_lag, T, ci_test, method, pc_alpha, tau_max,
+                                                            n_bs,aggregation)
                                 name = '%s-'*len(para_setup) % para_setup
                                 name = name[:-1]
                                 anyconfigurations += [name]

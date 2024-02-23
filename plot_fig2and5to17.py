@@ -1,24 +1,14 @@
 import matplotlib as mpl
-import collections
-from matplotlib.ticker import ScalarFormatter, NullFormatter, PercentFormatter
-from matplotlib import gridspec
-import matplotlib.cm as cm
-import sys, os
+from matplotlib.ticker import PercentFormatter
+import sys
 import numpy as np
 import pylab
 import matplotlib.pyplot as plt
 import pickle, pickle
-import scipy.stats
-from scipy.optimize import leastsq, curve_fit
-import scipy
-import statsmodels.api as sm
 import pandas as pd
 from statsmodels.formula.api import ols
-from copy import deepcopy
 import matplotlib.pyplot as plt
-import metrics_mod
 
-mpl.rcParams.update(params)
 def ylabl( text, axtrans ):
    pylab.text(-0.15, 0.5,text, fontsize = 10, horizontalalignment='center',
    verticalalignment='center',rotation='vertical',
@@ -274,9 +264,13 @@ def draw_it(paras, which):
                     para_plot = paras.index(para) + (methods.index(method)+idx)/float(len(n_bs)+len(methods)-1)*.6
                 else: 
                     para_plot = paras.index(para) + (methods.index(method)+idx)/float(len(n_bs)+len(methods)-1)*.6
-                
-                para_setup = (model, N_here, n_links_here, min_coeff, coeff, auto_here, contemp_fraction, frac_unobserved_here,  
-                                max_true_lag, T_here, ci_test, method, pc_alpha_here, tau_max_here, n_bs_here) 
+                if aggregation =="alternative" and "bootstrap" in method:
+                    para_setup = (model, N_here, n_links_here, min_coeff, coeff, auto_here, contemp_fraction, frac_unobserved_here,  
+                                    max_true_lag, T_here, ci_test, method, pc_alpha_here, tau_max_here, n_bs_here,aggregation)
+                else:
+                    para_setup = (model, N_here, n_links_here, min_coeff, coeff, auto_here, contemp_fraction, frac_unobserved_here,  
+                                    max_true_lag, T_here, ci_test, method, pc_alpha_here, tau_max_here, n_bs_here)
+                    
                 metrics_dict = get_metrics_from_file(para_setup)
                 if metrics_dict is not None:
 
@@ -938,10 +932,10 @@ if __name__ == '__main__':
     methods += [
         'standard_pcmci+',
         'bootstrap_pcmci+',
-        #'pcalg', #for fig 14/15
-        #'bootstrap_pcalg' #for fig 14/15
-        #'lpcmci' #for fig16/17
-        #'bootstrap_lpcmci' #for fig16/17
+        #'pcalg', #for fig 15/16
+        #'bootstrap_pcalg' #for fig 15/16
+        #'lpcmci' #for fig17/18
+        #'bootstrap_lpcmci' #for fig17/18
         ]
 
     if ci_test == 'par_corr':
@@ -987,9 +981,6 @@ if __name__ == '__main__':
             print(save_suffix)
             draw_it(paras=vary_auto, which='auto')  
 
-            if test:
-                sys.exit(0)
-
     elif 'highdim' in variant:
         T_here = [500]
         vary_N =   [2,3,5,10,20,30,40]
@@ -1013,9 +1004,6 @@ if __name__ == '__main__':
                     save_suffix = save_suffix[:-1]
 
                     draw_it(paras=vary_N, which='N')  
-
-                    if test:
-                        sys.exit(0)
 
     elif  'sample_size' in variant:
         vary_T = [100,200,500,1000]
@@ -1041,9 +1029,6 @@ if __name__ == '__main__':
                     save_suffix = save_suffix[:-1]
                     print(save_suffix)
                     draw_it(paras=vary_T, which='sample_size')  
-
-                    if test:
-                        sys.exit(0)
 
     if 'tau_max' in variant:
         T_here = [500]
@@ -1072,12 +1057,7 @@ if __name__ == '__main__':
                     print(save_suffix)
                     draw_it(paras=vary_tau_max, which='tau_max')  
 
-                    if test:
-                        sys.exit(0)
-
     if 'pc_alpha' in variant:
-
-
         T_here = [200]
         N_here = [10]
         auto_here = [0.95] 
@@ -1088,6 +1068,7 @@ if __name__ == '__main__':
                         0.4, 0.5, 0.6, 0.8, 0.9, 0.95, 0.98, 0.99, 0.999]
         min_coeff = 0.1
         coeff = 0.5
+        aggregation= "majority" #""alternative
         contemp_fraction = 0.3
         if "lpcmci" in variant: frac_unobserved= 0.3
         else: frac_unobserved = 0.
@@ -1105,5 +1086,3 @@ if __name__ == '__main__':
             save_suffix = save_suffix[:-1]
             print(save_suffix)
             draw_it(paras=vary_pc_alpha, which='pc_alpha')  
-            if test:
-                sys.exit(0)

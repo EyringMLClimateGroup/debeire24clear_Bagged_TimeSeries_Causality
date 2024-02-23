@@ -1,26 +1,17 @@
 import os, time, sys, psutil
-
 import numpy as np
 import scipy, math
-
-import tigramite
 import tigramite.data_processing as pp
-
 from tigramite.pcmci import PCMCI
 from tigramite.lpcmci import LPCMCI
 from tigramite.independence_tests.parcorr import ParCorr
 from tigramite.independence_tests.gpdc import GPDC
 import generate_data_mod as mod
-import statsmodels
-import statsmodels.tsa.api as tsa
 import metrics_mod
 import scipy.stats
 import mpi
 import pickle
-from copy import deepcopy
 from matplotlib import pyplot
-
-import socket 
 
 try:
     arg = sys.argv
@@ -35,11 +26,8 @@ except:
     num_cpus = 2
     samples = 100
     verbosity = 2
-    config_list = ["toymodel-9-9-0.4-0.4-0.98-0.3-2-500-par_corr-pcmcifast-majority-same-0.05"]
-    # print config_list
-    
+    config_list = ["toymodel-9-9-0.4-0.4-0.98-0.3-2-500-par_corr-pcmcifast-majority-same-0.05"] 
 num_configs = len(config_list)
-
 time_start = time.time()
 
 if verbosity > 2:
@@ -73,12 +61,13 @@ def calculate(para_setup):
     pc_alpha = str(paras[12])
     tau_max = int(paras[13])
     n_bs = int(paras[14])
+    try:
+        aggregation = str(paras[15])
+    except Exception as e:
+        aggregation="majority"
     #############################################
     ##  Data
     #############################################
-
-    addnoise = False
-    addtrend = False
         
     def lin_f(x): return x
     def f2(x): return (x + 5. * x**2 * np.exp(-x**2 / 20.))
@@ -89,7 +78,7 @@ def calculate(para_setup):
         links ={0: [((0, -1), auto, lin_f),
                     ((1, -1), coeff, lin_f)
                     ],
-                1: [((1, -1), auto, lin_f), 
+                1: [((1, -1), auto, lin_f),
                     ],                                    
                 }
         noises = [np.random.randn for j in range(len(links))]
@@ -251,15 +240,6 @@ def calculate(para_setup):
         else:
             print(true_graph.squeeze())
 
-    if addnoise:
-        data += noise_lev*np.random.RandomState(sam).randn(*data.shape)
-
-    if addtrend:
-        data += trend_lev*np.sin(2.*np.pi/(T/6.) * np.arange(T).reshape(T, 1))
-
-        # data += trend_lev*np.arange(T).reshape(T, 1)/float(T)
-
-
     if plot_data:
         print("PLOTTING")
         for j in range(N):
@@ -286,15 +266,8 @@ def calculate(para_setup):
         cond_ind_test = ParCorr(
             significance='analytic', 
             recycle_residuals=False)
-    elif ci_test == 'cmi_knn':
-        cond_ind_test = CMIknn(knn=0.1, 
-            sig_samples=500,
-            sig_blocklength=1)
     elif ci_test == 'gp_dc':             
         cond_ind_test = GPDC(null_dist_filename=None,recycle_residuals=False)
-    elif ci_test == 'oracle':             
-        cond_ind_test = OracleCI(link_coeffs=links, 
-            observed_vars=observed_vars)
 
     pcmci = PCMCI(
         dataframe=dataframe, 
@@ -365,7 +338,8 @@ def calculate(para_setup):
             "max_conds_px_lagged": max_conds_px_lagged,
             "fdr_method":'none'}
 
-        pcmcires = pcmci.run_bootstrap_of('run_pcmciplus',pcmci_arg,boot_samples =n_bs, boot_blocklength=1, )
+        pcmcires = pcmci.run_bootstrap_of('run_pcmciplus',pcmci_arg,boot_samples =n_bs, boot_blocklength=1,
+                                          aggregation=aggregation)
         graph_bool = pcmcires['summary_results']['most_frequent_links']
         graph= graph_bool
         val_min = np.abs(pcmcires['summary_results']['val_matrix_mean'])
@@ -405,7 +379,8 @@ def calculate(para_setup):
             "mode": 'standard',
             "contemp_collider_rule":'majority',
             "conflict_resolution": True,}
-        pcmcires = pcmci.run_bootstrap_of('run_pcalg',pcmci_arg,boot_samples =n_bs, boot_blocklength=1, )
+        pcmcires = pcmci.run_bootstrap_of('run_pcalg',pcmci_arg,boot_samples =n_bs, boot_blocklength=1,
+                                          aggregation=aggregation)
         graph_bool = pcmcires['summary_results']['most_frequent_links']
         graph= graph_bool
         val_min = np.abs(pcmcires['summary_results']['val_matrix_mean'])
@@ -437,7 +412,8 @@ def calculate(para_setup):
             "n_preliminary_iterations": 0,
             "prelim_only": False,
             }
-        boot_lpcmci_res = lpcmci.run_bootstrap_of('run_lpcmci',lpcmci_arg,boot_samples =n_bs, boot_blocklength=1, )
+        boot_lpcmci_res = lpcmci.run_bootstrap_of('run_lpcmci',lpcmci_arg,boot_samples =n_bs, boot_blocklength=1,
+                                                  aggregation=aggregation)
         graph_bool = boot_lpcmci_res['summary_results']['most_frequent_links']
         graph= graph_bool
         val_min = np.abs(boot_lpcmci_res['summary_results']['val_matrix_mean'])

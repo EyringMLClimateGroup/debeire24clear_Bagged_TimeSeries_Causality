@@ -1,9 +1,5 @@
 import matplotlib as mpl
-import collections
-from matplotlib.ticker import ScalarFormatter, NullFormatter, PercentFormatter
-from matplotlib import gridspec
 from matplotlib.ticker import FormatStrFormatter
-import matplotlib.cm as cm
 
 params = { 'figure.figsize': (8, 10),
            'legend.fontsize': 8,
@@ -36,21 +32,14 @@ def ylabr( text, axtrans ):
    verticalalignment='center',rotation='vertical',
    transform = axtrans)
 
-import sys, os
+import sys
 import numpy as np
 import pylab
 import matplotlib.pyplot as plt
 import pickle, pickle
-import scipy.stats
-from scipy.optimize import leastsq, curve_fit
-import scipy
-import statsmodels.api as sm # recommended import according to the docs
 from sklearn.metrics import auc
 import pandas as pd
-from statsmodels.formula.api import ols
-from copy import deepcopy
 import matplotlib.pyplot as plt
-import metrics_mod
 
 
 save_type = 'pdf'
@@ -128,9 +117,7 @@ def draw_it(paras, which):
 
     figsize = (4, 3)
     capsize = .5
-    marker1 = 'o'
     marker2 = 's'
-    marker3 = '+'
     alpha_marker = 1.
 
     params = { 
@@ -157,75 +144,70 @@ def draw_it(paras, which):
     ax1a = fig.add_subplot(gs[0, 0])
     ax2a = fig.add_subplot(gs[0, 1])
 
-    anova = {}
-    auc_dict = {}
-    fpr_dict = {}
-    pr_df = pd.DataFrame(columns=['method', 'n_bs', 'param', 'pc_alpha','recall','precision','contemp_recall',
+    pr_df = pd.DataFrame(columns=['method', 'aggregation', 'n_bs', 'param', 'pc_alpha','recall','precision','contemp_recall',
     'contemp_precision'])
+    aggregation = ["majority","alternative"]
 
     for method in methods:
-        anova[method] = {}
-        anova[method]['adj_anylink_tpr'] = []
-        anova[method]['adj_anylink_fpr'] = []
-        anova[method]['adj_lagged_tpr'] = []
-        anova[method]['adj_lagged_fpr'] = []
-        anova[method]['adj_contemp_tpr'] = []
-        anova[method]['adj_contemp_fpr'] = []
-        anova[method]['edgemarks_contemp_recall'] = []
-        anova[method]['edgemarks_contemp_precision'] = []
-        anova[method]['computation_time'] = []
-
-        if "bootstrap" in method:
-            n_bs_method = n_bs
-        else: 
-            n_bs_method= [0]
+        for idx_agg,aggregation_here in enumerate(aggregation):
+            if "bootstrap" in method:
+                n_bs_method = n_bs
+            else:
+                n_bs_method= [0]
+                aggregation_here= ""
+                if idx_agg>0:
+                    continue
 
 
-        for idx,n_bs_here in enumerate(n_bs_method):
-            for para in paras:
-                for pc_alpha in pc_alpha_here:
-                    pc_alpha = np.format_float_positional(float(pc_alpha),trim='-')
-                    if which == 'auto':
-                        auto_here = para
-                        N_here = N
-                        tau_max_here = tau_max
-                        frac_unobserved_here = frac_unobserved
-                        T_here = T
+            for idx,n_bs_here in enumerate(n_bs_method):
+                for para in paras:
+                    for pc_alpha in pc_alpha_here:
+                        pc_alpha = np.format_float_positional(float(pc_alpha),trim='-')
+                        if which == 'auto':
+                            auto_here = para
+                            N_here = N
+                            tau_max_here = tau_max
+                            frac_unobserved_here = frac_unobserved
+                            T_here = T
 
-                    elif which == 'N':
-                        N_here = para
-                        auto_here = auto
-                        tau_max_here = tau_max
-                        frac_unobserved_here = frac_unobserved
-                        T_here = T
+                        elif which == 'N':
+                            N_here = para
+                            auto_here = auto
+                            tau_max_here = tau_max
+                            frac_unobserved_here = frac_unobserved
+                            T_here = T
 
-                    elif which == 'tau_max':
-                        N_here = N
-                        auto_here = auto
-                        tau_max_here = para
-                        frac_unobserved_here = frac_unobserved
-                        T_here = T
+                        elif which == 'tau_max':
+                            N_here = N
+                            auto_here = auto
+                            tau_max_here = para
+                            frac_unobserved_here = frac_unobserved
+                            T_here = T
 
-                    elif which == 'sample_size':
-                        N_here = N
-                        auto_here = auto
-                        tau_max_here = tau_max
-                        frac_unobserved_here = frac_unobserved
-                        T_here = para
+                        elif which == 'sample_size':
+                            N_here = N
+                            auto_here = auto
+                            tau_max_here = tau_max
+                            frac_unobserved_here = frac_unobserved
+                            T_here = para
 
-                    n_links_here = links_from_N(N_here)
+                        n_links_here = links_from_N(N_here)
 
-                   
-                    para_setup = (model, N_here, n_links_here, min_coeff, coeff, auto_here, contemp_fraction, frac_unobserved_here,  
-                                    max_true_lag, T_here, ci_test, method, pc_alpha, tau_max_here, n_bs_here) 
-                    metrics_dict = get_metrics_from_file(para_setup)
-                    if metrics_dict is not None:
-                        current_res = pd.DataFrame([[
-                                    method, n_bs_here, para, pc_alpha, metrics_dict['adj_anylink_recall'][0], metrics_dict['adj_anylink_precision'][0],
-                                    metrics_dict['edgemarks_contemp_recall'][0],metrics_dict['edgemarks_contemp_precision'][0]
-                                    ]], 
-                                    columns=['method', 'n_bs', 'param', 'pc_alpha','recall','precision','contemp_recall','contemp_precision'])
-                        pr_df = pd.concat([pr_df,current_res])
+                        if aggregation_here =="alternative" and "bootstrap" in method:
+                            para_setup = (model, N_here, n_links_here, min_coeff, coeff, auto_here, contemp_fraction, frac_unobserved_here,  
+                                        max_true_lag, T_here, ci_test, method, pc_alpha, tau_max_here, n_bs_here,aggregation_here)
+                        else:
+                            para_setup = (model, N_here, n_links_here, min_coeff, coeff, auto_here, contemp_fraction, frac_unobserved_here,  
+                                        max_true_lag, T_here, ci_test, method, pc_alpha, tau_max_here, n_bs_here)
+
+                        metrics_dict = get_metrics_from_file(para_setup)
+                        if metrics_dict is not None:
+                            current_res = pd.DataFrame([[
+                                        method, aggregation_here, n_bs_here, para, pc_alpha, metrics_dict['adj_anylink_recall'][0], metrics_dict['adj_anylink_precision'][0],
+                                        metrics_dict['edgemarks_contemp_recall'][0],metrics_dict['edgemarks_contemp_precision'][0]
+                                        ]], 
+                                        columns=['method', 'aggregation', 'n_bs', 'param', 'pc_alpha','recall','precision','contemp_recall','contemp_precision'])
+                            pr_df = pd.concat([pr_df,current_res])
 
     #Find common recall coverage for all parameters settings (methods, varying_param)
     pc_alpha_min, pc_alpha_max = min(pc_alpha_here),max(pc_alpha_here)
@@ -243,57 +225,60 @@ def draw_it(paras, which):
     print(pr_df[pr_df.pc_alpha == pc_alpha_contemp_min])
     print(pr_df[pr_df.pc_alpha == pc_alpha_contemp_max])
     for method in methods:
-        if "bootstrap" in method:
-            n_bs_method = n_bs
-        else: 
-            n_bs_method= [0]
-        for idx,n_bs_here in enumerate(n_bs_method):
-            for para in paras:
-                print(para)
-                fx = []
-                x=[]
-                fx_c = []
-                x_c=[]
-                for pc_alpha in pc_alpha_here:
-                    pc_alpha = np.format_float_positional(float(pc_alpha),trim='-')
-                    data_query = pr_df.query('method==@method and n_bs==@n_bs_here and param==@para and pc_alpha == @pc_alpha')
-                    x.append(data_query.recall.values[0])
-                    fx.append(data_query.precision.values[0])
-                    if float(pc_alpha) <= 0.1:
-                        x_c.append(data_query.contemp_recall.values[0])
-                        fx_c.append(data_query.contemp_precision.values[0])
-                lower_interp_precision = np.interp(lower_common_recall,x,fx)
-                upper_interp_precision = np.interp(upper_common_recall,x,fx)
-                lower_interp_precision_c = np.interp(lower_common_contemp_recall,x_c,fx_c)
-                upper_interp_precision_c = np.interp(upper_common_contemp_recall,x_c,fx_c)
-                final_recall = [lower_common_recall]
-                final_precision = [lower_interp_precision]
-                final_recall_c = [lower_common_contemp_recall]
-                final_precision_c = [lower_interp_precision_c]
-                for ix in range(len(x)):
-                    if upper_common_recall>x[ix]>lower_common_recall:
-                        final_recall.append(x[ix])
-                        final_precision.append(fx[ix])
-                for ix_c in range(len(x_c)):
-                    if upper_common_contemp_recall>x_c[ix_c]>lower_common_contemp_recall:
-                        final_recall_c.append(x_c[ix_c])
-                        final_precision_c.append(fx_c[ix_c])
-                final_recall.append(upper_common_recall)
-                final_precision.append(upper_interp_precision)
-                final_recall_c.append(upper_common_contemp_recall)
-                final_precision_c.append(upper_interp_precision_c)
+        for idx_agg,aggregation_here in enumerate(aggregation):
+            if "bootstrap" in method:
+                n_bs_method = n_bs
+            else: 
+                n_bs_method= [0]
+                aggregation_here=""
+                if idx_agg>0: continue
+            for idx,n_bs_here in enumerate(n_bs_method):
+                for para in paras:
+                    print(para)
+                    fx = []
+                    x=[]
+                    fx_c = []
+                    x_c=[]
+                    for pc_alpha in pc_alpha_here:
+                        pc_alpha = np.format_float_positional(float(pc_alpha),trim='-')
+                        data_query = pr_df.query('method==@method and aggregation==@aggregation_here and n_bs==@n_bs_here and param==@para and pc_alpha == @pc_alpha')
+                        x.append(data_query.recall.values[0])
+                        fx.append(data_query.precision.values[0])
+                        if float(pc_alpha) <= 0.1:
+                            x_c.append(data_query.contemp_recall.values[0])
+                            fx_c.append(data_query.contemp_precision.values[0])
+                    lower_interp_precision = np.interp(lower_common_recall,x,fx)
+                    upper_interp_precision = np.interp(upper_common_recall,x,fx)
+                    lower_interp_precision_c = np.interp(lower_common_contemp_recall,x_c,fx_c)
+                    upper_interp_precision_c = np.interp(upper_common_contemp_recall,x_c,fx_c)
+                    final_recall = [lower_common_recall]
+                    final_precision = [lower_interp_precision]
+                    final_recall_c = [lower_common_contemp_recall]
+                    final_precision_c = [lower_interp_precision_c]
+                    for ix in range(len(x)):
+                        if upper_common_recall>x[ix]>lower_common_recall:
+                            final_recall.append(x[ix])
+                            final_precision.append(fx[ix])
+                    for ix_c in range(len(x_c)):
+                        if upper_common_contemp_recall>x_c[ix_c]>lower_common_contemp_recall:
+                            final_recall_c.append(x_c[ix_c])
+                            final_precision_c.append(fx_c[ix_c])
+                    final_recall.append(upper_common_recall)
+                    final_precision.append(upper_interp_precision)
+                    final_recall_c.append(upper_common_contemp_recall)
+                    final_precision_c.append(upper_interp_precision_c)
 
-                auc_value = auc(final_recall,final_precision)
-                auc_c_value = auc(final_recall_c,final_precision_c)
-                if "bootstrap" in method:
-                    para_plot = paras.index(para) + (methods.index(method)+idx)/float(len(n_bs)+len(methods)-1)*.6
-                else: 
-                    para_plot = paras.index(para) + (methods.index(method)+idx)/float(len(n_bs)+len(methods)-1)*.6
-                
-                ax1a.errorbar(para_plot, auc_value, capsize=capsize,  alpha=alpha_marker,
-                             color=color_picker(method,idx), marker=marker2, linestyle='dashed')
-                ax2a.errorbar(para_plot, auc_c_value, capsize=capsize,  alpha=alpha_marker,
-                             color=color_picker(method,idx), marker=marker2, linestyle='dashed')
+                    auc_value = auc(final_recall,final_precision)
+                    auc_c_value = auc(final_recall_c,final_precision_c)
+                    width=0.25/8*len(paras)
+                    if "bootstrap" in method:
+                        para_plot = 0.1+paras.index(para) + (methods.index(method)+idx+aggregation.index(aggregation_here))*width
+                    else: 
+                        para_plot = 0.1+paras.index(para) + (methods.index(method)+idx)*width
+                    ax1a.bar(para_plot, auc_value, capsize=capsize,  alpha=alpha_marker,
+                                color=color_picker(method,idx+idx_agg),width=width)
+                    ax2a.bar(para_plot, auc_c_value, capsize=capsize,  alpha=alpha_marker,
+                                color=color_picker(method,idx+idx_agg),width=width)  
                      
     axes = {'ax1a':ax1a, 'ax2a':ax2a}
     for axname in axes:
@@ -357,54 +342,36 @@ def draw_it(paras, which):
 
 
 
-    axlegend = fig.add_axes([0.0, .93, 1., .05])
+    axlegend = fig.add_axes([0.02, .93, 1., .05])
     axlegend.axis('off')
     for method in methods:
         if "bootstrap" in method:
             for idx,n_bs_here in enumerate(n_bs):
-                method_label ="Bagged("+str(n_bs_here)+")-PCMCI+"
-                color_ = color_picker(method,idx) 
-                
-                axlegend.errorbar([], [], linestyle='',
-                capsize=capsize, label=method_label,
-                color= color_, marker='s')
+                for idx_agg,aggregation_here in enumerate(aggregation):
+                    method_label ="Bagged("+str(n_bs_here)+")"+"-"+aggregation_here
+                    color_ = color_picker(method,idx+idx_agg) 
+                    axlegend.errorbar([], [], linestyle='',
+                    capsize=capsize, label=method_label, #method_label(method)
+                    color= color_, marker='s')
         else:
             method_label ="PCMCI+"
             color_= color_picker(method) 
             axlegend.errorbar([], [], linestyle='',
-            capsize=capsize, label=method_label,
+            capsize=capsize, label=method_label, #method_label(method)
             color=color_, marker='s')
     
     if not 'paper' in variant:
-        ncol = 4
-        fontsize = 10
+        ncol = 2
+        fontsize = 6
     else:
-        ncol = 4
-        fontsize = 10
+        ncol = 2
+        fontsize = 6
     axlegend.legend(ncol=ncol,
              loc='lower left',
-            markerscale=3,
-            columnspacing=.75,
-            labelspacing=.01,
-            fontsize=fontsize, framealpha=.5
-            )
-    if not 'paper' in variant:
-        ncol = 5
-        fontsize = 6
-        ncol2 =3
-        ncolroc=1
-    else:
-        ncol = 5
-        fontsize = 6
-        ncol2 =3
-        ncolroc=1
-
-    axlegend.legend(ncol=ncol,
-             loc='lower left',
-            markerscale=3,
-            columnspacing=.75,
-            labelspacing=.01,
-            fontsize=fontsize, framealpha=.5
+            markerscale=2.5,
+            columnspacing=.05,
+            labelspacing=.0,
+            fontsize=fontsize, framealpha=.0
             )
     
     #produce letter mark top left
@@ -478,7 +445,6 @@ def draw_it(paras, which):
     fig.subplots_adjust(left=0.07, right=0.93, hspace=.3, bottom=0.12, top=0.85, wspace=.3)
     print("Saving plot to %s" %(save_folder + '%s.%s' %(save_suffix, save_type)))
     fig.savefig(save_folder + '%s.%s' %(save_suffix, save_type))
-    plot_files.append(save_folder + '%s.%s' %(save_suffix, save_type))
 
 def adjust_lightness(color, amount=0.5):
     #Function to create a color shading
@@ -493,10 +459,11 @@ def adjust_lightness(color, amount=0.5):
     return colorsys.hls_to_rgb(c[0], max(0, min(1, amount * c[1])), c[2])
 
 def color_picker(method,idx=0):
-    
     if "bootstrap" in method:
-        color_scaling = [adjust_lightness('green', amount=i) for i in [3.4,2.4,1,0]]
-        return color_scaling[2]
+        color_scaling = [adjust_lightness('green', amount=i) for i in [0,1,2.6,3.4]]
+        if idx==0: return color_scaling[2]
+        if idx ==1: return adjust_lightness('purple', amount=2.9)
+        #return color_scaling[idx+1]
     else: return 'orange'
 
 def method_label(method):
@@ -613,8 +580,6 @@ if __name__ == '__main__':
             print(save_suffix)
             draw_it(paras=vary_auto, which='auto')  
 
-            if test:
-                sys.exit(0)
 
     elif 'highdim' in variant:
         if ci_test == 'par_corr':
@@ -649,8 +614,6 @@ if __name__ == '__main__':
                 save_suffix = save_suffix[:-1]
                 draw_it(paras=vary_N, which='N')  
 
-                if test:
-                    sys.exit(0)
 
     elif  'sample_size' in variant:
 
@@ -687,15 +650,12 @@ if __name__ == '__main__':
                 print(save_suffix)
                 draw_it(paras=vary_T, which='sample_size')  
 
-                if test:
-                    sys.exit(0)
     if 'tau_max' in variant:
 
         if ci_test == 'par_corr':
             T_here = [500]
             N_here = [5]
             auto_here = [0.95] 
-            # vary_N =  [5, 10, 20, 30, 40]
             num_rows = 4
             vary_tau_max = [5, 10, 15, 20, 25, 30, 35, 40]
 

@@ -774,7 +774,9 @@ class PCMCIbase():
     def run_bootstrap_of(self, method, method_args, 
                         boot_samples=100,
                         boot_blocklength=1,
-                        conf_lev=0.9, seed=None):
+                        conf_lev=0.9, 
+                        seed=None, 
+                        aggregation="majority"):
         """Runs chosen method on bootstrap samples drawn from DataFrame.
         
         Bootstraps for tau=0 are drawn from [2xtau_max, ..., T] and all lagged
@@ -808,6 +810,8 @@ class PCMCIbase():
             Two-sided confidence interval for summary results.
         seed : int, optional(default = None)
             Seed for RandomState (default_rng)
+        aggregation : str, optional (default: "majority")
+            Chosen aggregation strategy: "majority" or "alternative".
 
         Returns
         -------
@@ -824,6 +828,7 @@ class PCMCIbase():
                           'run_pcalg_non_timeseries_data',
                           'run_pcmciplus',
                           'run_lpcmci',
+                          'run_varlingam'
                           ]
 
         if method not in valid_methods:
@@ -881,7 +886,7 @@ class PCMCIbase():
 
         # Generate summary results
         summary_results = self.return_summary_results(results=boot_results, 
-                                                      conf_lev=conf_lev)
+                                                      conf_lev=conf_lev, aggregation=aggregation)
 
         # Reset bootstrap to None
         self.dataframe.bootstrap = None
@@ -890,7 +895,7 @@ class PCMCIbase():
                 'boot_results': boot_results}
 
     @staticmethod
-    def return_summary_results(results, conf_lev=0.9):
+    def return_summary_results(results, conf_lev=0.9, aggregation="majority"):
         """Return summary results for causal graphs.
 
         The function returns summary_results of an array of PCMCI(+) results.
@@ -908,7 +913,8 @@ class PCMCIbase():
             of shape (n_results, N, N, tau_max + 1).
         conf_lev : float, optional (default: 0.9)
             Two-sided confidence interval for summary results.
-
+        aggregation : str, optional (default: "majority")
+            Chosen aggregation strategy: "majority" or "alternative".
         Returns
         -------
         Dictionary of summary results.
@@ -952,19 +958,47 @@ class PCMCIbase():
                     links, counts = np.unique(results['graph'][:,i,j,abstau], 
                                         return_counts=True)
                     list_of_most_freq = links[counts == counts.max()]
-                    if len(list_of_most_freq) == 1:
-                        choice = list_of_most_freq[0]
-                    else:
-                        ordered_list = [link for link in preferred_order
-                                         if link in list_of_most_freq]
-                        if len(ordered_list) == 0:
-                            choice = "x-x"
+                    if aggregation=="majority":
+                        if len(list_of_most_freq) == 1:
+                            choice = list_of_most_freq[0]
                         else:
-                            choice = ordered_list[0]
-                    summary_results['most_frequent_links'][i,j, abstau] = choice
-                    summary_results['link_frequency'][i,j, abstau] = \
-                                counts[counts == counts.max()].sum()/float(n_results)
-
+                            ordered_list = [link for link in preferred_order
+                                            if link in list_of_most_freq]
+                            if len(ordered_list) == 0:
+                                choice = "x-x"
+                            else:
+                                choice = ordered_list[0]
+                        summary_results['most_frequent_links'][i,j, abstau] = choice
+                        summary_results['link_frequency'][i,j, abstau] = \
+                                    counts[counts == counts.max()].sum()/float(n_results)
+                        
+                    if aggregation=="alternative":
+                        if counts[links == ""].size == 0: #handle the case where there is no "" in links
+                            freq_of_no_edge=0
+                        else:
+                            freq_of_no_edge= counts[links == ""]
+                        freq_of_adjacency = n_results - freq_of_no_edge
+                        if freq_of_adjacency > freq_of_no_edge:
+                            adja_links = np.delete(links,np.where(links == ""))
+                            adja_counts = np.delete(counts,np.where(links == ""))
+                            list_of_most_freq_adja = adja_links[adja_counts == adja_counts.max()]
+                            if len(list_of_most_freq_adja) == 1:
+                                choice = list_of_most_freq_adja[0]
+                            else:
+                                ordered_list = [link for link in preferred_order
+                                                if link in list_of_most_freq_adja]
+                                if len(ordered_list) == 0:
+                                    choice = "x-x"
+                                else:
+                                    choice = ordered_list[0]
+                            summary_results['most_frequent_links'][i,j, abstau] = choice
+                            summary_results['link_frequency'][i,j, abstau] = \
+                                    adja_counts[adja_counts == adja_counts.max()].sum()/float(n_results)
+                        else: 
+                            choice= ""
+                            summary_results['most_frequent_links'][i,j, abstau] = choice
+                            summary_results['link_frequency'][i,j, abstau] = \
+                                    freq_of_no_edge.sum()/float(n_results)
         # Confidence intervals for val_matrix; interval is two-sided
         c_int = (1. - (1. - conf_lev)/2.)
         summary_results['val_matrix_mean'] = np.mean(
